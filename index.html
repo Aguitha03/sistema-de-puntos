@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Puntos</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        .container { max-width: 400px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
+        button { margin: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2 id="nombre">Cargando...</h2>
+        <p>Puntos: <span id="puntos">0</span></p>
+        <button onclick="actualizarPuntos('sumar')">➕ Sumar</button>
+        <button onclick="actualizarPuntos('restar')">➖ Restar</button>
+    </div>
+
+    <script>
+        // 📌 Obtiene el ID del usuario desde la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('id');
+
+        // 📌 URL del Google Apps Script (Reemplaza con tu URL real)
+        const apiUrl = "https://script.google.com/macros/s/AKfycbwajPvz4FxFkzwMl2j5EBDLBuKiiFL9GGJO_rXJwygp4QyIdJEmBxlXeg0gwSODNULFNQ/exec";
+
+        // 📌 Obtiene los datos del usuario
+        async function obtenerDatos() {
+            try {
+                let response = await fetch(`${apiUrl}?id=${userId}`);
+                let data = await response.json();
+                document.getElementById("nombre").innerText = data.nombre;
+                document.getElementById("puntos").innerText = data.puntos;
+            } catch (error) {
+                alert("Error al obtener datos");
+            }
+        }
+
+        // 📌 Función para actualizar los puntos
+        async function actualizarPuntos(operacion) {
+            try {
+                let response = await fetch(`${apiUrl}?id=${userId}&operacion=${operacion}`);
+                let mensaje = await response.text();
+                if (mensaje === "Actualizado") {
+                    obtenerDatos(); // Refresca los puntos después de actualizar
+                }
+            } catch (error) {
+                alert("Error al actualizar puntos");
+            }
+        }
+
+        obtenerDatos(); // Cargar datos al abrir la página
+    </script>
+
+</body>
+</html>
