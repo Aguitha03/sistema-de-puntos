@@ -3,56 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis Puntos</title>
+    <title>Sistema de Puntos</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
-        .container { max-width: 400px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
-        button { margin: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
+        input { font-size: 20px; text-align: center; width: 100px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2 id="nombre">Cargando...</h2>
-        <p>Puntos: <span id="puntos">0</span></p>
-        <button onclick="actualizarPuntos('sumar')">➕ Sumar</button>
-        <button onclick="actualizarPuntos('restar')">➖ Restar</button>
-    </div>
+    <h1>Sistema de Puntos</h1>
+    <p><strong>Nombre:</strong> <span id="nombre">Cargando...</span></p>
+    <p><strong>Puntos:</strong> <input type="number" id="nuevoPuntos" onkeydown="actualizarPuntos(event)"></p>
 
     <script>
-        // 📌 Obtiene el ID del usuario desde la URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('id');
+        const apiUrl = "https://script.google.com/macros/s/AKfycbzmX93ZHABfGxtuUayUoo6ALgEU7EWFtwQFxTp-FQy-9asU194b0YVXx0UmmB3y-p_QaA/exec"; // Reemplaza con tu URL de Apps Script
 
-        // 📌 URL del Google Apps Script (Reemplaza con tu URL real)
-        const apiUrl = "https://script.google.com/macros/s/AKfycbwajPvz4FxFkzwMl2j5EBDLBuKiiFL9GGJO_rXJwygp4QyIdJEmBxlXeg0gwSODNULFNQ/exec";
+        async function obtenerPuntos() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get("id");
 
-        // 📌 Obtiene los datos del usuario
-        async function obtenerDatos() {
-            try {
-                let response = await fetch(`${apiUrl}?id=${userId}`);
-                let data = await response.json();
-                document.getElementById("nombre").innerText = data.nombre;
-                document.getElementById("puntos").innerText = data.puntos;
-            } catch (error) {
-                alert("Error al obtener datos");
+            if (!id) {
+                alert("Error: No se proporcionó un ID.");
+                return;
             }
-        }
 
-        // 📌 Función para actualizar los puntos
-        async function actualizarPuntos(operacion) {
             try {
-                let response = await fetch(`${apiUrl}?id=${userId}&operacion=${operacion}`);
-                let mensaje = await response.text();
-                if (mensaje === "Actualizado") {
-                    obtenerDatos(); // Refresca los puntos después de actualizar
+                const response = await fetch(`${apiUrl}?id=${id}`);
+                const data = await response.json();
+
+                console.log("Respuesta del servidor (datos obtenidos):", data);
+
+                if (data.error) {
+                    alert("Error: " + data.error);
+                } else {
+                    document.getElementById("nombre").textContent = data.nombre;
+                    document.getElementById("nuevoPuntos").value = data.puntos;
                 }
             } catch (error) {
-                alert("Error al actualizar puntos");
+                console.error("Error al obtener datos:", error);
+                alert("Error de conexión con el servidor.");
             }
         }
 
-        obtenerDatos(); // Cargar datos al abrir la página
+        async function actualizarPuntos(event) {
+            if (event.key === "Enter") {
+                const urlParams = new URLSearchParams(window.location.search);
+                const id = urlParams.get("id");
+                const nuevoValor = document.getElementById("nuevoPuntos").value;
+
+                console.log("ID capturado:", id);
+                console.log("Nuevo valor ingresado:", nuevoValor);
+
+                if (!id || nuevoValor === "") {
+                    alert("Error: No se proporcionó un ID o valor incorrecto.");
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${apiUrl}?id=${id}&nuevoPuntos=${nuevoValor}`);
+                    const result = await response.text();
+
+                    console.log("Respuesta del servidor:", result);
+
+                    if (result.includes("Actualizado")) {
+                        obtenerPuntos(); // Refresca los datos después de actualizar
+                    } else {
+                        alert("Error al actualizar puntos.");
+                    }
+                } catch (error) {
+                    console.error("Error de conexión:", error);
+                    alert("Error de conexión con el servidor.");
+                }
+            }
+        }
+
+        // Cargar los puntos al abrir la página
+        obtenerPuntos();
     </script>
 
 </body>
