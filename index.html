@@ -6,9 +6,9 @@
     <title>Sistema de Puntos</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
-        input { font-size: 20px; text-align: center; width: 100px; }
-        #claveAdmin { margin-top: 10px; }
-        #nuevoPuntos { display: none; }
+        input { font-size: 20px; text-align: center; width: 100px; margin: 5px; }
+        button { font-size: 18px; padding: 5px 10px; margin-top: 10px; cursor: pointer; }
+        #claveAdmin, #nuevoPuntos, #sumarPuntos, #restarPuntos, #actualizarBtn { display: none; }
     </style>
 </head>
 <body>
@@ -18,10 +18,17 @@
     <p><strong>Puntos:</strong> <span id="puntos"></span></p>
 
     <input type="password" id="claveAdmin" placeholder="Clave de administrador">
-    <input type="number" id="nuevoPuntos" onkeydown="actualizarPuntos(event)">
+    
+    <div id="adminControls">
+        <input type="number" id="sumarPuntos" placeholder="Sumar puntos">
+        <input type="number" id="restarPuntos" placeholder="Restar puntos">
+        <button id="actualizarBtn" onclick="actualizarPuntos()">Actualizar</button>
+    </div>
 
     <script>
         const apiUrl = "https://script.google.com/macros/s/AKfycby4ypJzi_jy2JqDe_zPOm_ctXO9IPmQ66ECQxDTcozSO3pbv41Yqg7wyISzXGrpyitwfg/exec"; // Reemplaza con tu URL
+
+        let puntosActuales = 0;
 
         async function obtenerPuntos() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -43,7 +50,7 @@
                 } else {
                     document.getElementById("nombre").textContent = data.nombre;
                     document.getElementById("puntos").textContent = data.puntos;
-                    document.getElementById("nuevoPuntos").value = data.puntos;
+                    puntosActuales = parseInt(data.puntos, 10);
                 }
             } catch (error) {
                 console.error("Error al obtener datos:", error);
@@ -54,40 +61,43 @@
         document.getElementById("claveAdmin").addEventListener("input", function() {
             const claveCorrecta = "1234"; // Cambia esto por tu clave real
             if (this.value === claveCorrecta) {
-                document.getElementById("puntos").style.display = "none";
-                document.getElementById("nuevoPuntos").style.display = "inline-block";
+                document.getElementById("sumarPuntos").style.display = "inline-block";
+                document.getElementById("restarPuntos").style.display = "inline-block";
+                document.getElementById("actualizarBtn").style.display = "inline-block";
             } else {
-                document.getElementById("puntos").style.display = "inline";
-                document.getElementById("nuevoPuntos").style.display = "none";
+                document.getElementById("sumarPuntos").style.display = "none";
+                document.getElementById("restarPuntos").style.display = "none";
+                document.getElementById("actualizarBtn").style.display = "none";
             }
         });
 
-        async function actualizarPuntos(event) {
-            if (event.key === "Enter") {
-                const urlParams = new URLSearchParams(window.location.search);
-                const id = urlParams.get("id");
-                const nuevoValor = document.getElementById("nuevoPuntos").value;
+        async function actualizarPuntos() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get("id");
+            const sumar = parseInt(document.getElementById("sumarPuntos").value, 10) || 0;
+            const restar = parseInt(document.getElementById("restarPuntos").value, 10) || 0;
 
-                if (!id || nuevoValor === "") {
-                    alert("Error: No se proporcionó un ID o valor incorrecto.");
-                    return;
+            const nuevoValor = puntosActuales + sumar - restar;
+
+            if (!id) {
+                alert("Error: No se proporcionó un ID.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${apiUrl}?id=${id}&nuevoPuntos=${nuevoValor}`);
+                const result = await response.text();
+
+                console.log("Respuesta del servidor:", result);
+
+                if (result.includes("Actualizado")) {
+                    obtenerPuntos(); // Recargar los puntos actualizados
+                } else {
+                    alert("Error al actualizar puntos.");
                 }
-
-                try {
-                    const response = await fetch(`${apiUrl}?id=${id}&nuevoPuntos=${nuevoValor}`);
-                    const result = await response.text();
-
-                    console.log("Respuesta del servidor:", result);
-
-                    if (result.includes("Actualizado")) {
-                        obtenerPuntos();
-                    } else {
-                        alert("Error al actualizar puntos.");
-                    }
-                } catch (error) {
-                    console.error("Error de conexión:", error);
-                    alert("Error de conexión con el servidor.");
-                }
+            } catch (error) {
+                console.error("Error de conexión:", error);
+                alert("Error de conexión con el servidor.");
             }
         }
 
