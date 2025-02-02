@@ -7,16 +7,21 @@
     <style>
         body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
         input { font-size: 20px; text-align: center; width: 100px; }
+        #claveAdmin { margin-top: 10px; }
+        #nuevoPuntos { display: none; }
     </style>
 </head>
 <body>
 
     <h1>Sistema de Puntos</h1>
     <p><strong>Nombre:</strong> <span id="nombre">Cargando...</span></p>
-    <p><strong>Puntos:</strong> <input type="number" id="nuevoPuntos" onkeydown="actualizarPuntos(event)"></p>
+    <p><strong>Puntos:</strong> <span id="puntos"></span></p>
+
+    <input type="password" id="claveAdmin" placeholder="Clave de administrador">
+    <input type="number" id="nuevoPuntos" onkeydown="actualizarPuntos(event)">
 
     <script>
-        const apiUrl = "https://script.google.com/macros/s/AKfycby4ypJzi_jy2JqDe_zPOm_ctXO9IPmQ66ECQxDTcozSO3pbv41Yqg7wyISzXGrpyitwfg/exec"; // Reemplaza con tu URL de Apps Script
+        const apiUrl = "https://script.google.com/macros/s/AKfycby4ypJzi_jy2JqDe_zPOm_ctXO9IPmQ66ECQxDTcozSO3pbv41Yqg7wyISzXGrpyitwfg/exec"; // Reemplaza con tu URL
 
         async function obtenerPuntos() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -31,12 +36,13 @@
                 const response = await fetch(`${apiUrl}?id=${id}`);
                 const data = await response.json();
 
-                console.log("Respuesta del servidor (datos obtenidos):", data);
+                console.log("Respuesta del servidor:", data);
 
                 if (data.error) {
                     alert("Error: " + data.error);
                 } else {
                     document.getElementById("nombre").textContent = data.nombre;
+                    document.getElementById("puntos").textContent = data.puntos;
                     document.getElementById("nuevoPuntos").value = data.puntos;
                 }
             } catch (error) {
@@ -45,14 +51,22 @@
             }
         }
 
+        document.getElementById("claveAdmin").addEventListener("input", function() {
+            const claveCorrecta = "1234"; // Cambia esto por tu clave real
+            if (this.value === claveCorrecta) {
+                document.getElementById("puntos").style.display = "none";
+                document.getElementById("nuevoPuntos").style.display = "inline-block";
+            } else {
+                document.getElementById("puntos").style.display = "inline";
+                document.getElementById("nuevoPuntos").style.display = "none";
+            }
+        });
+
         async function actualizarPuntos(event) {
             if (event.key === "Enter") {
                 const urlParams = new URLSearchParams(window.location.search);
                 const id = urlParams.get("id");
                 const nuevoValor = document.getElementById("nuevoPuntos").value;
-
-                console.log("ID capturado:", id);
-                console.log("Nuevo valor ingresado:", nuevoValor);
 
                 if (!id || nuevoValor === "") {
                     alert("Error: No se proporcionó un ID o valor incorrecto.");
@@ -66,7 +80,7 @@
                     console.log("Respuesta del servidor:", result);
 
                     if (result.includes("Actualizado")) {
-                        obtenerPuntos(); // Refresca los datos después de actualizar
+                        obtenerPuntos();
                     } else {
                         alert("Error al actualizar puntos.");
                     }
@@ -77,7 +91,6 @@
             }
         }
 
-        // Cargar los puntos al abrir la página
         obtenerPuntos();
     </script>
 
