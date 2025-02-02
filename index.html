@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA DE PUNTOS FELTON</title>
+    <title>Sistema de Puntos</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
         input { font-size: 20px; text-align: center; width: 100px; margin: 5px; }
@@ -17,45 +17,48 @@
     <p><strong>Nombre:</strong> <span id="nombre">Cargando...</span></p>
     <p><strong>Puntos:</strong> <span id="puntos">-</span></p>
 
-    <input type="password" id="claveAdmin" placeholder="Clave de administrador">
-
-    <div id="adminControls">
-        <input type="number" id="sumarPuntos" placeholder="Sumar">
-        <input type="number" id="restarPuntos" placeholder="Restar">
-        <button onclick="actualizarPuntos()">Actualizar Puntos</button>
+    <div id="adminSection" style="display: none;">
+        <input type="password" id="claveAdmin" placeholder="Clave de administrador">
+        <div id="adminControls" style="display: none;">
+            <input type="number" id="sumarPuntos" placeholder="Sumar">
+            <input type="number" id="restarPuntos" placeholder="Restar">
+            <button onclick="actualizarPuntos()">Actualizar Puntos</button>
+        </div>
     </div>
 
     <script>
         const apiUrl = "https://script.google.com/macros/s/AKfycby4ypJzi_jy2JqDe_zPOm_ctXO9IPmQ66ECQxDTcozSO3pbv41Yqg7wyISzXGrpyitwfg/exec"; // Reemplázalo con tu URL real
-
         let puntosActuales = 0;
 
-        async function obtenerPuntos() {
+        function obtenerPuntos() {
             const urlParams = new URLSearchParams(window.location.search);
             const id = urlParams.get("id");
+            const esAdmin = urlParams.get("admin") === "true";
 
             if (!id) {
                 alert("Error: No se proporcionó un ID.");
                 return;
             }
 
-            try {
-                const response = await fetch(`${apiUrl}?id=${id}`);
-                const data = await response.json();
-
-                console.log("Respuesta del servidor:", data);
-
-                if (data.error) {
-                    alert("Error: " + data.error);
-                } else {
-                    document.getElementById("nombre").textContent = data.nombre;
-                    document.getElementById("puntos").textContent = data.puntos;
-                    puntosActuales = parseInt(data.puntos, 10);
-                }
-            } catch (error) {
-                console.error("Error al obtener datos:", error);
-                alert("Error de conexión con el servidor.");
+            if (esAdmin) {
+                document.getElementById("adminSection").style.display = "block";
             }
+
+            fetch(`${apiUrl}?id=${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert("Error: " + data.error);
+                    } else {
+                        document.getElementById("nombre").textContent = data.nombre;
+                        document.getElementById("puntos").textContent = data.puntos;
+                        puntosActuales = parseInt(data.puntos, 10);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error al obtener datos:", error);
+                    alert("Error de conexión con el servidor.");
+                });
         }
 
         document.getElementById("claveAdmin").addEventListener("input", function() {
@@ -79,8 +82,6 @@
             try {
                 const response = await fetch(`${apiUrl}?id=${id}&nuevoPuntos=${nuevoPuntaje}`);
                 const result = await response.text();
-
-                console.log("Respuesta del servidor:", result);
 
                 if (result.includes("Actualizado")) {
                     obtenerPuntos(); // Recargar los puntos actualizados
